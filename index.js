@@ -3,6 +3,7 @@ import * as readline from "node:readline/promises"
 import { fileURLToPath } from "url"
 import path from "path"
 import os from "node:os"
+import { readdir } from "node:fs/promises"
 
 const __filename = fileURLToPath(import.meta.url)
 
@@ -45,6 +46,11 @@ rl.on("line", (input) => {
             directory(currentPath)
             break
         }
+        case "ls": {
+            ls()
+            directory(currentPath)
+            break
+        }
         default: {
             console.log(`Received: ${input}`)
         }
@@ -64,5 +70,26 @@ function up() {
     if (currentPath === "") {
         currentPath = root
     }
+}
+
+async function ls() {
+    const files = await readdir(currentPath, { withFileTypes: true })
+    const directory = []
+    const filesOffDirectory = []
+
+    files.map((file) => {
+        if (file.isDirectory()) {
+            directory.push({ name: file.name, type: "directory" })
+        }
+        if (file.isFile()) {
+            filesOffDirectory.push({ name: file.name, type: "file" })
+        }
+    })
+    const list = [
+        ...directory.sort((a, b) => a.name.localeCompare(b.name)),
+        ...filesOffDirectory.sort((a, b) => a.name.localeCompare(b.name)),
+    ]
+
+    console.table(list)
 }
 startApp()
