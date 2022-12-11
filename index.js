@@ -3,7 +3,7 @@ import * as readline from "node:readline/promises"
 import { fileURLToPath } from "url"
 import path from "path"
 import os from "node:os"
-import { readdir, writeFile, rename } from "node:fs/promises"
+import { readdir, writeFile, rename, rm as remove } from "node:fs/promises"
 import { createReadStream, createWriteStream } from "node:fs"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -104,6 +104,29 @@ rl.on("line", async (input) => {
                 // await directory(currentPath)
             } else {
                 console.log(`Error`)
+            }
+            break
+        }
+        case "mv": {
+            try {
+                if (consoleInput.length === 3) {
+                    mv(consoleInput.slice(1))
+                    // await directory(currentPath)
+                } else {
+                    console.log(`Error`)
+                }
+                break
+            } catch {
+                console.log(`Error in mv!`)
+                await directory(currentPath)
+            }
+        }
+        case "rm": {
+            if (consoleInput.length === 2) {
+                rm(consoleInput.slice(1).join(" "))
+            } else {
+                console.log(`Error`)
+                directory(currentPath)
             }
             break
         }
@@ -220,5 +243,43 @@ async function cp(names) {
         console.log("Error in cp!")
         await directory(currentPath)
     }
+}
+
+async function mv(names) {
+    try {
+        const [fileToRead, directoryToWrite] = names
+        const pathToDirectory = path.normalize(
+            `${currentPath}${path.sep}${directoryToWrite}`
+        )
+        const files = await readdir(pathToDirectory, { withFileTypes: true })
+        const filesToMove = await readdir(`${currentPath}`, {
+            withFileTypes: true,
+        })
+        if (files && filesToMove.includes(fileToRead)) {
+            const readTextFile = createReadStream(path.resolve(fileToRead))
+            await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
+            const writeTextFile = createWriteStream(
+                `${pathToDirectory}${path.sep}${fileToRead}`
+            )
+            readTextFile.pipe(writeTextFile)
+            remove(`${currentPath}${path.sep}${fileToRead}`)
+            await directory(currentPath)
+        } else {
+            console.log("Error in mv!")
+            await directory(currentPath)
+        }
+    } catch {
+        console.log("Error in mv!")
+        await directory(currentPath)
+    }
+}
+
+async function rm(fileToDelete) {
+    remove(`${currentPath}${path.sep}${fileToDelete}`)
+        .then(() => directory(currentPath))
+        .catch(() => {
+            console.log("Error in rm!")
+            directory(currentPath)
+        })
 }
 startApp()
