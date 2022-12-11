@@ -3,8 +3,15 @@ import * as readline from "node:readline/promises"
 import { fileURLToPath } from "url"
 import path from "path"
 import os from "node:os"
-import { readdir, writeFile, rename, rm as remove } from "node:fs/promises"
+import {
+    readdir,
+    writeFile,
+    rename,
+    rm as remove,
+    readFile,
+} from "node:fs/promises"
 import { createReadStream, createWriteStream } from "node:fs"
+import { createHash } from "node:crypto"
 
 const __filename = fileURLToPath(import.meta.url)
 
@@ -39,7 +46,7 @@ function startApp() {
     }
 }
 rl.on("line", async (input) => {
-    const consoleInput = input.split(" ")
+    const consoleInput = input.trim().split(" ")
 
     switch (consoleInput[0]) {
         case ".exit": {
@@ -129,6 +136,30 @@ rl.on("line", async (input) => {
                 directory(currentPath)
             }
             break
+        }
+        case "os": {
+            if (consoleInput.length === 2) {
+                handlerOs(consoleInput.slice(1).join(" "))
+            } else {
+                console.log(`Error`)
+            }
+            directory(currentPath)
+            break
+        }
+        case "hash": {
+            try {
+                if (consoleInput.length === 2) {
+                    hash(consoleInput.slice(1).join(" "))
+                    await directory(currentPath)
+                } else {
+                    console.log(`Error`)
+                    await directory(currentPath)
+                }
+                break
+            } catch {
+                console.log(`Error in mv!`)
+                await directory(currentPath)
+            }
         }
         default: {
             console.log(`Received: ${input}`)
@@ -281,5 +312,49 @@ async function rm(fileToDelete) {
             console.log("Error in rm!")
             directory(currentPath)
         })
+}
+
+async function handlerOs(command) {
+    switch (command) {
+        case "--EOL": {
+            const eol = JSON.stringify(os.EOL)
+            console.log(eol)
+            break
+        }
+        case "--cpus": {
+            const cpus = os.cpus()
+            const info = cpus.map(
+                (item) => (item = { model: item.model, speed: item.speed })
+            )
+            console.table(info)
+            break
+        }
+        case "--homedir": {
+            console.log(os.homedir())
+            break
+        }
+        case "--username": {
+            console.log(os.userInfo().username)
+            break
+        }
+        case "--architecture": {
+            console.log(os.arch())
+            break
+        }
+        default: {
+            console.log("Error in os!")
+        }
+    }
+}
+
+async function hash(fileToHash) {
+    const pathToFile = path.resolve(fileToHash)
+    console.log(pathToFile)
+    const contents = await readFile(pathToFile, { encoding: "utf8" }).catch(
+        () => {
+            console.log("Error in hash!")
+        }
+    )
+    console.log(createHash("sha256").update(contents).digest("hex"))
 }
 startApp()
