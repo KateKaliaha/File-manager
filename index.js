@@ -1,6 +1,5 @@
 import process, { stdin as input, stdout as output } from "node:process"
 import * as readline from "node:readline/promises"
-import { fileURLToPath } from "url"
 import path from "path"
 import os from "node:os"
 import {
@@ -14,223 +13,199 @@ import { createReadStream, createWriteStream } from "node:fs"
 import { createHash } from "node:crypto"
 import { createBrotliCompress, createBrotliDecompress } from "node:zlib"
 import { pipeline } from "node:stream"
+import { showDirectory } from "./src/helpers.js"
+import { up, cd, ls } from "./src/navigation.js"
 
-const __filename = fileURLToPath(import.meta.url)
-
-const __dirname = path.dirname(__filename)
 let currentPath = ""
-const rl = readline.createInterface({ input, output })
 
 const userData = process.argv.slice(2)
 const prefix = "--username="
-const name = userData[0].slice(prefix.length)
-
-const directory = async (path) => {
-    process.stdout.write(`You are currently in ${path} ${os.EOL}`)
-    // console.log(process.chdir(os.homedir()), os.homedir(), process.cwd())
-}
+let name = userData[0].slice(prefix.length).trim()
 
 function startApp() {
     try {
-        if (userData.length > 1) {
-            throw new Error("Error: Invalid data")
-        }
         if (!userData[0].startsWith(prefix)) {
             throw new Error("Error: Invalid data")
         }
+        if (!name || userData.length > 1) {
+            name = "unknown user"
+        }
         process.stdout.write(`Welcome to the File Manager, ${name}! ${os.EOL}`)
-        // process.chdir(os.homedir())
-        currentPath = os.homedir()
-        // directory(process.cwd())
-        directory(currentPath)
-    } catch (err) {
-        console.error(err.message)
+        process.chdir(os.homedir())
+        // currentPath = os.homedir()
+        showDirectory(process.cwd())
+        const rl = readline.createInterface({ input, output })
+        rl.on("line", async (input) => {
+            const consoleInput = input.trim().split(" ")
+
+            switch (consoleInput[0]) {
+                case ".exit": {
+                    rl.close()
+                    break
+                }
+
+                case "up": {
+                    up(consoleInput)
+                    showDirectory(process.cwd())
+                    break
+                }
+
+                case "ls": {
+                    await ls(consoleInput)
+                    showDirectory(process.cwd())
+                    break
+                }
+
+                case "cat": {
+                    try {
+                        if (consoleInput.length === 2) {
+                            await cat(consoleInput.slice(1).join(" "))
+                        } else {
+                            console.log(`Error`)
+                        }
+                    } catch {
+                        console.log("Error")
+                    } finally {
+                    }
+                    break
+                }
+
+                case "add": {
+                    if (consoleInput.length === 2) {
+                        await add(consoleInput.slice(1).join(" "))
+                        await directory(currentPath)
+                    } else {
+                        console.log(`Error`)
+                    }
+                    break
+                }
+
+                case "cd": {
+                    if (consoleInput.length === 1) {
+                        console.log("Invalid input!")
+                        showDirectory(process.cwd())
+                        return
+                    }
+                    cd(consoleInput.slice(1).join(" "))
+                    break
+                }
+
+                case "rn": {
+                    console.log(consoleInput)
+                    if (consoleInput.length === 3) {
+                        await rn(consoleInput.slice(1))
+                        await directory(currentPath)
+                    } else {
+                        console.log(`Error`)
+                    }
+                    break
+                }
+
+                case "cp": {
+                    if (consoleInput.length === 3) {
+                        cp(consoleInput.slice(1))
+                        // await directory(currentPath)
+                    } else {
+                        console.log(`Error`)
+                    }
+                    break
+                }
+
+                case "mv": {
+                    try {
+                        if (consoleInput.length === 3) {
+                            mv(consoleInput.slice(1))
+                            // await directory(currentPath)
+                        } else {
+                            console.log(`Error`)
+                        }
+                        break
+                    } catch {
+                        console.log(`Error in mv!`)
+                        await directory(currentPath)
+                    }
+                }
+
+                case "rm": {
+                    if (consoleInput.length === 2) {
+                        rm(consoleInput.slice(1).join(" "))
+                    } else {
+                        console.log(`Error`)
+                        directory(currentPath)
+                    }
+                    break
+                }
+
+                case "os": {
+                    if (consoleInput.length === 2) {
+                        handlerOs(consoleInput.slice(1).join(" "))
+                    } else {
+                        console.log(`Error`)
+                    }
+                    directory(currentPath)
+                    break
+                }
+
+                case "hash": {
+                    try {
+                        if (consoleInput.length === 2) {
+                            hash(consoleInput.slice(1).join(" "))
+                            await directory(currentPath)
+                        } else {
+                            console.log(`Error`)
+                            await directory(currentPath)
+                        }
+                        break
+                    } catch {
+                        console.log(`Error in mv!`)
+                        await directory(currentPath)
+                    }
+                }
+
+                case "compress": {
+                    try {
+                        if (consoleInput.length === 3) {
+                            compress(consoleInput.slice(1))
+                            // await directory(currentPath)
+                        } else {
+                            console.log(`Error in compress`)
+                        }
+                        break
+                    } catch {
+                        console.log(`Error in compress!`)
+                        await directory(currentPath)
+                    }
+                }
+
+                case "decompress": {
+                    try {
+                        if (consoleInput.length === 3) {
+                            decompress(consoleInput.slice(1))
+                            // await directory(currentPath)
+                        } else {
+                            console.log(`Error in compress`)
+                        }
+                        break
+                    } catch {
+                        console.log(`Error in compress!`)
+                        await directory(currentPath)
+                    }
+                }
+
+                default: {
+                    console.log("Invalid input!")
+                }
+            }
+        })
+        rl.on("close", () => {
+            console.log(
+                `Thank you for using File Manager, ${name}, goodbye! ${os.EOL}`
+            )
+        })
+        // showDirectory(currentPath)
+    } catch {
+        console.log("Invalid input!")
     }
-}
-rl.on("line", async (input) => {
-    const consoleInput = input.trim().split(" ")
-
-    switch (consoleInput[0]) {
-        case ".exit": {
-            rl.close()
-            break
-        }
-        case "up": {
-            up()
-            directory(currentPath)
-            break
-        }
-        case "ls": {
-            await ls()
-            await directory(currentPath)
-            break
-        }
-        case "cat": {
-            try {
-                if (consoleInput.length === 2) {
-                    await cat(consoleInput.slice(1).join(" "))
-                } else {
-                    console.log(`Error`)
-                }
-            } catch {
-                console.log("Error")
-            } finally {
-            }
-            break
-        }
-
-        case "add": {
-            if (consoleInput.length === 2) {
-                await add(consoleInput.slice(1).join(" "))
-                await directory(currentPath)
-            } else {
-                console.log(`Error`)
-            }
-            break
-        }
-        case "cd": {
-            if (consoleInput.length === 2) {
-                cd(consoleInput.slice(1).join(" "))
-            } else {
-                console.log(`Error`)
-                directory(currentPath)
-            }
-            break
-        }
-        case "rn": {
-            console.log(consoleInput)
-            if (consoleInput.length === 3) {
-                await rn(consoleInput.slice(1))
-                await directory(currentPath)
-            } else {
-                console.log(`Error`)
-            }
-            break
-        }
-        case "cp": {
-            if (consoleInput.length === 3) {
-                cp(consoleInput.slice(1))
-                // await directory(currentPath)
-            } else {
-                console.log(`Error`)
-            }
-            break
-        }
-        case "mv": {
-            try {
-                if (consoleInput.length === 3) {
-                    mv(consoleInput.slice(1))
-                    // await directory(currentPath)
-                } else {
-                    console.log(`Error`)
-                }
-                break
-            } catch {
-                console.log(`Error in mv!`)
-                await directory(currentPath)
-            }
-        }
-        case "rm": {
-            if (consoleInput.length === 2) {
-                rm(consoleInput.slice(1).join(" "))
-            } else {
-                console.log(`Error`)
-                directory(currentPath)
-            }
-            break
-        }
-        case "os": {
-            if (consoleInput.length === 2) {
-                handlerOs(consoleInput.slice(1).join(" "))
-            } else {
-                console.log(`Error`)
-            }
-            directory(currentPath)
-            break
-        }
-        case "hash": {
-            try {
-                if (consoleInput.length === 2) {
-                    hash(consoleInput.slice(1).join(" "))
-                    await directory(currentPath)
-                } else {
-                    console.log(`Error`)
-                    await directory(currentPath)
-                }
-                break
-            } catch {
-                console.log(`Error in mv!`)
-                await directory(currentPath)
-            }
-        }
-        case "compress": {
-            try {
-                if (consoleInput.length === 3) {
-                    compress(consoleInput.slice(1))
-                    // await directory(currentPath)
-                } else {
-                    console.log(`Error in compress`)
-                }
-                break
-            } catch {
-                console.log(`Error in compress!`)
-                await directory(currentPath)
-            }
-        }
-        case "decompress": {
-            try {
-                if (consoleInput.length === 3) {
-                    decompress(consoleInput.slice(1))
-                    // await directory(currentPath)
-                } else {
-                    console.log(`Error in compress`)
-                }
-                break
-            } catch {
-                console.log(`Error in compress!`)
-                await directory(currentPath)
-            }
-        }
-        default: {
-            console.log(`Received: ${input}`)
-        }
-    }
-})
-rl.on("close", () => {
-    console.log(`Thank you for using File Manager, ${name}, goodbye! ${os.EOL}`)
-})
-
-function up() {
-    const root = path.parse(currentPath).root
-    if (root === currentPath) {
-        return currentPath
-    }
-    const newCurrentPath = currentPath.split(path.sep).slice(0, -1)
-    currentPath = newCurrentPath.join(path.sep)
-    if (currentPath === "") {
-        currentPath = root
-    }
-}
-
-async function ls() {
-    const files = await readdir(currentPath, { withFileTypes: true })
-    const directory = []
-    const filesOffDirectory = []
-
-    files.map((file) => {
-        if (file.isDirectory()) {
-            directory.push({ name: file.name, type: "directory" })
-        }
-        if (file.isFile()) {
-            filesOffDirectory.push({ name: file.name, type: "file" })
-        }
-    })
-    const list = [
-        ...directory.sort((a, b) => a.name.localeCompare(b.name)),
-        ...filesOffDirectory.sort((a, b) => a.name.localeCompare(b.name)),
-    ]
-
-    console.table(list)
 }
 
 async function cat(fileToRead) {
@@ -244,35 +219,6 @@ async function cat(fileToRead) {
 
 async function add(fileToWrite) {
     await writeFile(`${currentPath}${path.sep}${fileToWrite}`, "")
-}
-
-async function cd(file) {
-    try {
-        if (file === "..") {
-            up()
-            directory(currentPath)
-        } else {
-            const filePath = path.resolve(currentPath, file)
-            // process.chdir(filePath)
-            // console.log(process.cwd())
-            if (path.isAbsolute(file)) {
-                const files = await readdir(file, { withFileTypes: true })
-                if (files) {
-                    currentPath = file
-                    directory(currentPath)
-                }
-            } else {
-                const files = await readdir(filePath, { withFileTypes: true })
-                if (files) {
-                    currentPath = filePath
-                    directory(currentPath)
-                }
-            }
-        }
-    } catch {
-        console.log("Error")
-        directory(currentPath)
-    }
 }
 
 async function rn(names) {
