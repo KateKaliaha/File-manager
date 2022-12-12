@@ -12,6 +12,8 @@ import {
 } from "node:fs/promises"
 import { createReadStream, createWriteStream } from "node:fs"
 import { createHash } from "node:crypto"
+import { createBrotliCompress, createBrotliDecompress } from "node:zlib"
+import { pipeline } from "node:stream"
 
 const __filename = fileURLToPath(import.meta.url)
 
@@ -158,6 +160,34 @@ rl.on("line", async (input) => {
                 break
             } catch {
                 console.log(`Error in mv!`)
+                await directory(currentPath)
+            }
+        }
+        case "compress": {
+            try {
+                if (consoleInput.length === 3) {
+                    compress(consoleInput.slice(1))
+                    // await directory(currentPath)
+                } else {
+                    console.log(`Error in compress`)
+                }
+                break
+            } catch {
+                console.log(`Error in compress!`)
+                await directory(currentPath)
+            }
+        }
+        case "decompress": {
+            try {
+                if (consoleInput.length === 3) {
+                    decompress(consoleInput.slice(1))
+                    // await directory(currentPath)
+                } else {
+                    console.log(`Error in compress`)
+                }
+                break
+            } catch {
+                console.log(`Error in compress!`)
                 await directory(currentPath)
             }
         }
@@ -349,12 +379,52 @@ async function handlerOs(command) {
 
 async function hash(fileToHash) {
     const pathToFile = path.resolve(fileToHash)
-    console.log(pathToFile)
     const contents = await readFile(pathToFile, { encoding: "utf8" }).catch(
         () => {
             console.log("Error in hash!")
         }
     )
     console.log(createHash("sha256").update(contents).digest("hex"))
+}
+
+async function compress(files) {
+    const [sourceFile, destinationDirectory] = files
+    const sourcePath = path.resolve(sourceFile)
+    const nameFile = path.parse(sourcePath)
+    const destinationPath = path.resolve(
+        `${currentPath}${path.sep}${destinationDirectory}${path.sep}${nameFile.base}.br`
+    )
+
+    const brotliCompress = createBrotliCompress()
+    const source = createReadStream(sourcePath)
+    const destination = createWriteStream(destinationPath)
+
+    pipeline(source, brotliCompress, destination, (err) => {
+        if (err) {
+            console.error("Error in compress")
+            process.exitCode = 1
+        }
+    })
+    await directory(currentPath)
+}
+async function decompress(files) {
+    const [sourceFile, destinationDirectory] = files
+    const sourcePath = path.resolve(sourceFile)
+    const nameFile = path.parse(sourcePath)
+    const destinationPath = path.normalize(
+        `${currentPath}${path.sep}${destinationDirectory}${path.sep}${nameFile.name}`
+    )
+
+    const brotliDecompress = createBrotliDecompress()
+    const source = createReadStream(sourcePath)
+    const destination = createWriteStream(destinationPath)
+
+    pipeline(source, brotliDecompress, destination, (err) => {
+        if (err) {
+            console.error("Error in decompress")
+            process.exitCode = 1
+        }
+    })
+    await directory(currentPath)
 }
 startApp()
