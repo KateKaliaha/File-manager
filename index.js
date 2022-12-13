@@ -10,6 +10,7 @@ import { pipeline } from "node:stream"
 import { showDirectory } from "./src/helpers.js"
 import { up, cd, ls } from "./src/navigation.js"
 import { cat, cp, rm, rn, add, mv } from "./src/basicOperations.js"
+import { handlerOs } from "./src/operationSystem.js"
 
 let currentPath = ""
 
@@ -27,7 +28,6 @@ function startApp() {
         }
         process.stdout.write(`Welcome to the File Manager, ${name}! ${os.EOL}`)
         process.chdir(os.homedir())
-        // currentPath = os.homedir()
         showDirectory(process.cwd())
         const rl = readline.createInterface({ input, output })
         rl.on("line", async (input) => {
@@ -110,9 +110,9 @@ function startApp() {
                     if (consoleInput.length === 2) {
                         handlerOs(consoleInput.slice(1).join(" "))
                     } else {
-                        console.log(`Error`)
+                        console.log("Invalid input!")
                     }
-                    directory(currentPath)
+                    showDirectory(process.cwd())
                     break
                 }
 
@@ -136,7 +136,6 @@ function startApp() {
                     try {
                         if (consoleInput.length === 3) {
                             compress(consoleInput.slice(1))
-                            // await directory(currentPath)
                         } else {
                             console.log(`Error in compress`)
                         }
@@ -151,7 +150,6 @@ function startApp() {
                     try {
                         if (consoleInput.length === 3) {
                             decompress(consoleInput.slice(1))
-                            // await directory(currentPath)
                         } else {
                             console.log(`Error in compress`)
                         }
@@ -172,124 +170,8 @@ function startApp() {
                 `Thank you for using File Manager, ${name}, goodbye! ${os.EOL}`
             )
         })
-        // showDirectory(currentPath)
     } catch {
         console.log("Invalid input!")
-    }
-}
-
-// async function cat(fileToRead) {
-//     const readTextFile = createReadStream(path.resolve(fileToRead))
-//     readTextFile.on("data", function (chunk) {
-//         console.log(chunk.toString())
-//     })
-//     readTextFile.on("end", () => directory(currentPath))
-//     readTextFile.on("error", () => console.log("Error"))
-// }
-
-// async function add(fileToWrite) {
-//     await writeFile(`${currentPath}${path.sep}${fileToWrite}`, "")
-// }
-
-// async function rn(names) {
-//     try {
-//         const [oldName, newName] = names
-//         await rename(`${currentPath}/${oldName}`, `${currentPath}/${newName}`)
-//     } catch {
-//         console.log("Error in rn!")
-//     }
-// }
-
-// async function cp(names) {
-//     try {
-//         const [fileToRead, directoryToWrite] = names
-//         const pathToDirectory = path.normalize(
-//             `${currentPath}${path.sep}${directoryToWrite}`
-//         )
-//         const files = await readdir(pathToDirectory, { withFileTypes: true })
-//         if (files) {
-//             const readTextFile = createReadStream(path.resolve(fileToRead))
-//             await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
-//             const writeTextFile = createWriteStream(
-//                 `${pathToDirectory}${path.sep}${fileToRead}`
-//             )
-//             readTextFile.pipe(writeTextFile)
-//             await directory(currentPath)
-//         }
-//     } catch {
-//         console.log("Error in cp!")
-//         await directory(currentPath)
-//     }
-// }
-
-// async function mv(names) {
-//     try {
-//         const [fileToRead, directoryToWrite] = names
-//         const pathToDirectory = path.normalize(
-//             `${currentPath}${path.sep}${directoryToWrite}`
-//         )
-//         const files = await readdir(pathToDirectory, { withFileTypes: true })
-//         const filesToMove = await readdir(`${currentPath}`, {
-//             withFileTypes: true,
-//         })
-//         if (files && filesToMove.includes(fileToRead)) {
-//             const readTextFile = createReadStream(path.resolve(fileToRead))
-//             await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
-//             const writeTextFile = createWriteStream(
-//                 `${pathToDirectory}${path.sep}${fileToRead}`
-//             )
-//             readTextFile.pipe(writeTextFile)
-//             remove(`${currentPath}${path.sep}${fileToRead}`)
-//             await directory(currentPath)
-//         } else {
-//             console.log("Error in mv!")
-//             await directory(currentPath)
-//         }
-//     } catch {
-//         console.log("Error in mv!")
-//         await directory(currentPath)
-//     }
-// }
-
-// async function rm(fileToDelete) {
-//     remove(`${currentPath}${path.sep}${fileToDelete}`)
-//         .then(() => directory(currentPath))
-//         .catch(() => {
-//             console.log("Error in rm!")
-//             directory(currentPath)
-//         })
-// }
-
-async function handlerOs(command) {
-    switch (command) {
-        case "--EOL": {
-            const eol = JSON.stringify(os.EOL)
-            console.log(eol)
-            break
-        }
-        case "--cpus": {
-            const cpus = os.cpus()
-            const info = cpus.map(
-                (item) => (item = { model: item.model, speed: item.speed })
-            )
-            console.table(info)
-            break
-        }
-        case "--homedir": {
-            console.log(os.homedir())
-            break
-        }
-        case "--username": {
-            console.log(os.userInfo().username)
-            break
-        }
-        case "--architecture": {
-            console.log(os.arch())
-            break
-        }
-        default: {
-            console.log("Error in os!")
-        }
     }
 }
 
