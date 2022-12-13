@@ -92,26 +92,16 @@ function startApp() {
                 }
 
                 case "mv": {
-                    // try {
-                    // if (consoleInput.length === 3) {
                     mv(consoleInput.slice(1))
-                    // await directory(currentPath)
-                    // } else {
-                    //     console.log(`Error`)
-                    // }
                     break
-                    // } catch {
-                    //     console.log(`Error in mv!`)
-                    //     // await directory(currentPath)
-                    // }
                 }
 
                 case "rm": {
                     if (consoleInput.length === 2) {
                         rm(consoleInput.slice(1).join(" "))
                     } else {
-                        console.log(`Error`)
-                        directory(currentPath)
+                        console.log("Invalid input!")
+                        showDirectory(process.cwd())
                     }
                     break
                 }
