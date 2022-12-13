@@ -4,8 +4,14 @@ export const showDirectory = async (path) => {
     process.stdout.write(`You are currently in ${path} ${os.EOL}`)
 }
 
-export const deleteQuotes = (arr) => {
-    const arrWithoutQuotes = arr.map((item) => item.replace(/"/g))
-    console.log(arrWithoutQuotes)
-    return arrWithoutQuotes
+export const deleteQuotes = (data) => {
+    let strWithoutQuotes = ""
+
+    if (Array.isArray(data)) {
+        strWithoutQuotes = data.join(" ").replace(/["']/g, "")
+    } else {
+        strWithoutQuotes = data.replace(/["']/g, "")
+    }
+
+    return strWithoutQuotes.trim()
 }

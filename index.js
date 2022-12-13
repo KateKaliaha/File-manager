@@ -2,19 +2,14 @@ import process, { stdin as input, stdout as output } from "node:process"
 import * as readline from "node:readline/promises"
 import path from "path"
 import os from "node:os"
-import {
-    readdir,
-    writeFile,
-    rename,
-    rm as remove,
-    readFile,
-} from "node:fs/promises"
+import { readFile } from "node:fs/promises"
 import { createReadStream, createWriteStream } from "node:fs"
 import { createHash } from "node:crypto"
 import { createBrotliCompress, createBrotliDecompress } from "node:zlib"
 import { pipeline } from "node:stream"
 import { showDirectory } from "./src/helpers.js"
 import { up, cd, ls } from "./src/navigation.js"
+import { cat, cp, rm, rn, add, mv } from "./src/basicOperations.js"
 
 let currentPath = ""
 
@@ -57,25 +52,16 @@ function startApp() {
                 }
 
                 case "cat": {
-                    try {
-                        if (consoleInput.length === 2) {
-                            await cat(consoleInput.slice(1).join(" "))
-                        } else {
-                            console.log(`Error`)
-                        }
-                    } catch {
-                        console.log("Error")
-                    } finally {
-                    }
+                    cat(consoleInput.slice(1).join(" "))
                     break
                 }
 
                 case "add": {
                     if (consoleInput.length === 2) {
                         await add(consoleInput.slice(1).join(" "))
-                        await directory(currentPath)
                     } else {
-                        console.log(`Error`)
+                        console.log("Invalid input!")
+                        await showDirectory(process.cwd())
                     }
                     break
                 }
@@ -91,39 +77,33 @@ function startApp() {
                 }
 
                 case "rn": {
-                    console.log(consoleInput)
                     if (consoleInput.length === 3) {
                         await rn(consoleInput.slice(1))
-                        await directory(currentPath)
                     } else {
-                        console.log(`Error`)
+                        console.log("Invalid input!")
+                        showDirectory(process.cwd())
                     }
                     break
                 }
 
                 case "cp": {
-                    if (consoleInput.length === 3) {
-                        cp(consoleInput.slice(1))
-                        // await directory(currentPath)
-                    } else {
-                        console.log(`Error`)
-                    }
+                    cp(consoleInput.slice(1))
                     break
                 }
 
                 case "mv": {
-                    try {
-                        if (consoleInput.length === 3) {
-                            mv(consoleInput.slice(1))
-                            // await directory(currentPath)
-                        } else {
-                            console.log(`Error`)
-                        }
-                        break
-                    } catch {
-                        console.log(`Error in mv!`)
-                        await directory(currentPath)
-                    }
+                    // try {
+                    // if (consoleInput.length === 3) {
+                    mv(consoleInput.slice(1))
+                    // await directory(currentPath)
+                    // } else {
+                    //     console.log(`Error`)
+                    // }
+                    break
+                    // } catch {
+                    //     console.log(`Error in mv!`)
+                    //     // await directory(currentPath)
+                    // }
                 }
 
                 case "rm": {
@@ -208,87 +188,87 @@ function startApp() {
     }
 }
 
-async function cat(fileToRead) {
-    const readTextFile = createReadStream(path.resolve(fileToRead))
-    readTextFile.on("data", function (chunk) {
-        console.log(chunk.toString())
-    })
-    readTextFile.on("end", () => directory(currentPath))
-    readTextFile.on("error", () => console.log("Error"))
-}
+// async function cat(fileToRead) {
+//     const readTextFile = createReadStream(path.resolve(fileToRead))
+//     readTextFile.on("data", function (chunk) {
+//         console.log(chunk.toString())
+//     })
+//     readTextFile.on("end", () => directory(currentPath))
+//     readTextFile.on("error", () => console.log("Error"))
+// }
 
-async function add(fileToWrite) {
-    await writeFile(`${currentPath}${path.sep}${fileToWrite}`, "")
-}
+// async function add(fileToWrite) {
+//     await writeFile(`${currentPath}${path.sep}${fileToWrite}`, "")
+// }
 
-async function rn(names) {
-    try {
-        const [oldName, newName] = names
-        await rename(`${currentPath}/${oldName}`, `${currentPath}/${newName}`)
-    } catch {
-        console.log("Error in rn!")
-    }
-}
+// async function rn(names) {
+//     try {
+//         const [oldName, newName] = names
+//         await rename(`${currentPath}/${oldName}`, `${currentPath}/${newName}`)
+//     } catch {
+//         console.log("Error in rn!")
+//     }
+// }
 
-async function cp(names) {
-    try {
-        const [fileToRead, directoryToWrite] = names
-        const pathToDirectory = path.normalize(
-            `${currentPath}${path.sep}${directoryToWrite}`
-        )
-        const files = await readdir(pathToDirectory, { withFileTypes: true })
-        if (files) {
-            const readTextFile = createReadStream(path.resolve(fileToRead))
-            await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
-            const writeTextFile = createWriteStream(
-                `${pathToDirectory}${path.sep}${fileToRead}`
-            )
-            readTextFile.pipe(writeTextFile)
-            await directory(currentPath)
-        }
-    } catch {
-        console.log("Error in cp!")
-        await directory(currentPath)
-    }
-}
+// async function cp(names) {
+//     try {
+//         const [fileToRead, directoryToWrite] = names
+//         const pathToDirectory = path.normalize(
+//             `${currentPath}${path.sep}${directoryToWrite}`
+//         )
+//         const files = await readdir(pathToDirectory, { withFileTypes: true })
+//         if (files) {
+//             const readTextFile = createReadStream(path.resolve(fileToRead))
+//             await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
+//             const writeTextFile = createWriteStream(
+//                 `${pathToDirectory}${path.sep}${fileToRead}`
+//             )
+//             readTextFile.pipe(writeTextFile)
+//             await directory(currentPath)
+//         }
+//     } catch {
+//         console.log("Error in cp!")
+//         await directory(currentPath)
+//     }
+// }
 
-async function mv(names) {
-    try {
-        const [fileToRead, directoryToWrite] = names
-        const pathToDirectory = path.normalize(
-            `${currentPath}${path.sep}${directoryToWrite}`
-        )
-        const files = await readdir(pathToDirectory, { withFileTypes: true })
-        const filesToMove = await readdir(`${currentPath}`, {
-            withFileTypes: true,
-        })
-        if (files && filesToMove.includes(fileToRead)) {
-            const readTextFile = createReadStream(path.resolve(fileToRead))
-            await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
-            const writeTextFile = createWriteStream(
-                `${pathToDirectory}${path.sep}${fileToRead}`
-            )
-            readTextFile.pipe(writeTextFile)
-            remove(`${currentPath}${path.sep}${fileToRead}`)
-            await directory(currentPath)
-        } else {
-            console.log("Error in mv!")
-            await directory(currentPath)
-        }
-    } catch {
-        console.log("Error in mv!")
-        await directory(currentPath)
-    }
-}
+// async function mv(names) {
+//     try {
+//         const [fileToRead, directoryToWrite] = names
+//         const pathToDirectory = path.normalize(
+//             `${currentPath}${path.sep}${directoryToWrite}`
+//         )
+//         const files = await readdir(pathToDirectory, { withFileTypes: true })
+//         const filesToMove = await readdir(`${currentPath}`, {
+//             withFileTypes: true,
+//         })
+//         if (files && filesToMove.includes(fileToRead)) {
+//             const readTextFile = createReadStream(path.resolve(fileToRead))
+//             await writeFile(`${pathToDirectory}${path.sep}${fileToRead}`, "")
+//             const writeTextFile = createWriteStream(
+//                 `${pathToDirectory}${path.sep}${fileToRead}`
+//             )
+//             readTextFile.pipe(writeTextFile)
+//             remove(`${currentPath}${path.sep}${fileToRead}`)
+//             await directory(currentPath)
+//         } else {
+//             console.log("Error in mv!")
+//             await directory(currentPath)
+//         }
+//     } catch {
+//         console.log("Error in mv!")
+//         await directory(currentPath)
+//     }
+// }
 
-async function rm(fileToDelete) {
-    remove(`${currentPath}${path.sep}${fileToDelete}`)
-        .then(() => directory(currentPath))
-        .catch(() => {
-            console.log("Error in rm!")
-            directory(currentPath)
-        })
-}
+// async function rm(fileToDelete) {
+//     remove(`${currentPath}${path.sep}${fileToDelete}`)
+//         .then(() => directory(currentPath))
+//         .catch(() => {
+//             console.log("Error in rm!")
+//             directory(currentPath)
+//         })
+// }
 
 async function handlerOs(command) {
     switch (command) {
