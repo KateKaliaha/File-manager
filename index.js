@@ -2,15 +2,14 @@ import process, { stdin as input, stdout as output } from "node:process"
 import * as readline from "node:readline/promises"
 import path from "path"
 import os from "node:os"
-import { readFile } from "node:fs/promises"
 import { createReadStream, createWriteStream } from "node:fs"
-import { createHash } from "node:crypto"
 import { createBrotliCompress, createBrotliDecompress } from "node:zlib"
 import { pipeline } from "node:stream"
 import { showDirectory } from "./src/helpers.js"
 import { up, cd, ls } from "./src/navigation.js"
 import { cat, cp, rm, rn, add, mv } from "./src/basicOperations.js"
 import { handlerOs } from "./src/operationSystem.js"
+import { hash } from "./src/hash.js"
 
 let currentPath = ""
 
@@ -117,19 +116,13 @@ function startApp() {
                 }
 
                 case "hash": {
-                    try {
-                        if (consoleInput.length === 2) {
-                            hash(consoleInput.slice(1).join(" "))
-                            await directory(currentPath)
-                        } else {
-                            console.log(`Error`)
-                            await directory(currentPath)
-                        }
-                        break
-                    } catch {
-                        console.log(`Error in mv!`)
-                        await directory(currentPath)
+                    if (consoleInput.length === 2) {
+                        await hash(consoleInput.slice(1).join(" "))
+                    } else {
+                        console.log("Invalid input!")
                     }
+                    showDirectory(process.cwd())
+                    break
                 }
 
                 case "compress": {
@@ -175,15 +168,15 @@ function startApp() {
     }
 }
 
-async function hash(fileToHash) {
-    const pathToFile = path.resolve(fileToHash)
-    const contents = await readFile(pathToFile, { encoding: "utf8" }).catch(
-        () => {
-            console.log("Error in hash!")
-        }
-    )
-    console.log(createHash("sha256").update(contents).digest("hex"))
-}
+// async function hash(fileToHash) {
+//     const pathToFile = path.resolve(fileToHash)
+//     const contents = await readFile(pathToFile, { encoding: "utf8" }).catch(
+//         () => {
+//             console.log("Error in hash!")
+//         }
+//     )
+//     console.log(createHash("sha256").update(contents).digest("hex"))
+// }
 
 async function compress(files) {
     const [sourceFile, destinationDirectory] = files
