@@ -1,17 +1,12 @@
 import process, { stdin as input, stdout as output } from "node:process"
 import * as readline from "node:readline/promises"
-import path from "path"
 import os from "node:os"
-import { createReadStream, createWriteStream } from "node:fs"
-import { createBrotliCompress, createBrotliDecompress } from "node:zlib"
-import { pipeline } from "node:stream"
 import { showDirectory } from "./src/helpers.js"
 import { up, cd, ls } from "./src/navigation.js"
 import { cat, cp, rm, rn, add, mv } from "./src/basicOperations.js"
 import { handlerOs } from "./src/operationSystem.js"
 import { hash } from "./src/hash.js"
-
-let currentPath = ""
+import { compress, decompress } from "./src/archive.js"
 
 const userData = process.argv.slice(2)
 const prefix = "--username="
@@ -126,31 +121,13 @@ function startApp() {
                 }
 
                 case "compress": {
-                    try {
-                        if (consoleInput.length === 3) {
-                            compress(consoleInput.slice(1))
-                        } else {
-                            console.log(`Error in compress`)
-                        }
-                        break
-                    } catch {
-                        console.log(`Error in compress!`)
-                        await directory(currentPath)
-                    }
+                    compress(consoleInput.slice(1))
+                    break
                 }
 
                 case "decompress": {
-                    try {
-                        if (consoleInput.length === 3) {
-                            decompress(consoleInput.slice(1))
-                        } else {
-                            console.log(`Error in compress`)
-                        }
-                        break
-                    } catch {
-                        console.log(`Error in compress!`)
-                        await directory(currentPath)
-                    }
+                    decompress(consoleInput.slice(1))
+                    break
                 }
 
                 default: {
@@ -168,54 +145,4 @@ function startApp() {
     }
 }
 
-// async function hash(fileToHash) {
-//     const pathToFile = path.resolve(fileToHash)
-//     const contents = await readFile(pathToFile, { encoding: "utf8" }).catch(
-//         () => {
-//             console.log("Error in hash!")
-//         }
-//     )
-//     console.log(createHash("sha256").update(contents).digest("hex"))
-// }
-
-async function compress(files) {
-    const [sourceFile, destinationDirectory] = files
-    const sourcePath = path.resolve(sourceFile)
-    const nameFile = path.parse(sourcePath)
-    const destinationPath = path.resolve(
-        `${currentPath}${path.sep}${destinationDirectory}${path.sep}${nameFile.base}.br`
-    )
-
-    const brotliCompress = createBrotliCompress()
-    const source = createReadStream(sourcePath)
-    const destination = createWriteStream(destinationPath)
-
-    pipeline(source, brotliCompress, destination, (err) => {
-        if (err) {
-            console.error("Error in compress")
-            process.exitCode = 1
-        }
-    })
-    await directory(currentPath)
-}
-async function decompress(files) {
-    const [sourceFile, destinationDirectory] = files
-    const sourcePath = path.resolve(sourceFile)
-    const nameFile = path.parse(sourcePath)
-    const destinationPath = path.normalize(
-        `${currentPath}${path.sep}${destinationDirectory}${path.sep}${nameFile.name}`
-    )
-
-    const brotliDecompress = createBrotliDecompress()
-    const source = createReadStream(sourcePath)
-    const destination = createWriteStream(destinationPath)
-
-    pipeline(source, brotliDecompress, destination, (err) => {
-        if (err) {
-            console.error("Error in decompress")
-            process.exitCode = 1
-        }
-    })
-    await directory(currentPath)
-}
 startApp()
