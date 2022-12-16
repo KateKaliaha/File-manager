@@ -1,6 +1,11 @@
 import path from "path"
 import { readdir } from "node:fs/promises"
-import { showDirectory, deleteQuotes } from "./helpers.js"
+import {
+    showDirectory,
+    deleteQuotes,
+    accessPath,
+    generatePath,
+} from "./helpers.js"
 
 export const up = (input) => {
     if (input.length > 1) {
@@ -50,23 +55,13 @@ export const ls = async (input) => {
 
 export const cd = async (directory) => {
     try {
-        const newDirectoryPath = path.resolve(
-            `${process.cwd()}${path.sep}${deleteQuotes(directory)}`
-        )
+        const newDirectoryPath = generatePath(deleteQuotes(directory))
+        const existDestinationPath = await accessPath(newDirectoryPath)
 
-        if (path.isAbsolute(directory + path.sep)) {
-            const readDirectory = await readdir(directory)
-            if (readDirectory) {
-                process.chdir(directory)
-            }
+        if (existDestinationPath) {
+            process.chdir(newDirectoryPath)
         } else {
-            const readDirectory = await readdir(newDirectoryPath, {
-                withFileTypes: true,
-            })
-
-            if (readDirectory) {
-                process.chdir(newDirectoryPath + path.sep)
-            }
+            console.log("Operation failed!")
         }
     } catch {
         console.log("Operation failed!")

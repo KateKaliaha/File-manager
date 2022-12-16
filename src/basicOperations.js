@@ -1,17 +1,21 @@
 import { createReadStream, createWriteStream } from "node:fs"
-import { readdir, writeFile, rename, rm as remove } from "node:fs/promises"
+import { writeFile, rename, rm as remove } from "node:fs/promises"
 import path from "path"
-import { showDirectory, deleteQuotes } from "./helpers.js"
+import {
+    showDirectory,
+    deleteQuotes,
+    generatePath,
+    accessPath,
+} from "./helpers.js"
 
 export const cat = async (fileToRead) => {
-    const readTextFile = createReadStream(
-        path.resolve(deleteQuotes(fileToRead))
-    )
+    const pathToFile = generatePath(deleteQuotes(fileToRead))
+    const readTextFile = createReadStream(pathToFile)
     readTextFile.on("data", function (chunk) {
         console.log(chunk.toString())
     })
-    readTextFile.on("end", () => showDirectory(process.cwd()))
-    readTextFile.on("error", () => console.log("Invalid input!"))
+    readTextFile.on("close", () => showDirectory(process.cwd()))
+    readTextFile.on("error", () => console.log("Operation failed!"))
 }
 
 export const add = async (fileToWrite) => {
@@ -25,10 +29,12 @@ export const add = async (fileToWrite) => {
 export const rn = async (names) => {
     try {
         const [oldName, newName] = names
-        await rename(
-            `${process.cwd()}/${deleteQuotes(oldName)}`,
-            `${process.cwd()}/${deleteQuotes(newName)}`
-        )
+        const pathToRenameFile = generatePath(deleteQuotes(oldName))
+        const directoryToPath = path.parse(pathToRenameFile).dir
+        const pathToNewFile = `${directoryToPath}${path.sep}${deleteQuotes(
+            newName
+        )}`
+        await rename(pathToRenameFile, pathToNewFile)
     } catch {
         console.log("Operation failed!")
     } finally {
@@ -37,69 +43,64 @@ export const rn = async (names) => {
 }
 
 export const cp = async (dataForCopyFile) => {
-    try {
-        const [fileToCopy, ...directoryToWriteFile] = dataForCopyFile
-        const pathToDirectory = path.resolve(
-            `${process.cwd()}${path.sep}${deleteQuotes(directoryToWriteFile)}`
-        )
-        const readNewDirectory = await readdir(pathToDirectory)
-        const readOldDirectory = await readdir(`${process.cwd()}`)
+    const [fileToCopy, ...directoryToWriteFile] = dataForCopyFile
+    const pathToCopyFile = generatePath(deleteQuotes(fileToCopy))
+    const pathToNewDirectory = generatePath(deleteQuotes(directoryToWriteFile))
+    const fileName = path.parse(pathToCopyFile).base
+    const existSourceFile = await accessPath(pathToCopyFile)
+    const existDestinationFile = await accessPath(pathToNewDirectory)
 
-        if (readOldDirectory.includes(fileToCopy) && readNewDirectory) {
-            const pathToNewFile = `${pathToDirectory}${path.sep}${deleteQuotes(
-                fileToCopy
-            )}`
-            const readTextFile = createReadStream(
-                path.resolve(deleteQuotes(fileToCopy))
-            )
-            await writeFile(pathToNewFile, "")
-            const writeTextFile = createWriteStream(pathToNewFile)
-            readTextFile.pipe(writeTextFile)
-        } else {
-            console.log("Operation failed!")
-        }
-    } catch {
-        console.log("Operation failed!")
-    } finally {
+    if (existSourceFile && existDestinationFile) {
+        const pathToNewFile = `${pathToNewDirectory}${path.sep}${fileName}`
+        const readTextFile = createReadStream(pathToCopyFile)
+        const writeTextFile = createWriteStream(pathToNewFile, { flags: "wx" })
+        readTextFile.pipe(
+            writeTextFile.on("error", () => {
+                readTextFile.close()
+                console.log("Operation failed!")
+            })
+        )
+        writeTextFile.on("close", () => {
+            showDirectory(process.cwd())
+        })
+    } else {
+        console.log("Operation failed")
         showDirectory(process.cwd())
     }
 }
 
 export const mv = async (dataToMove) => {
-    try {
-        const [fileToMove, ...directoryToMoveFile] = dataToMove
-        const pathToNewDirectory = path.resolve(
-            `${process.cwd()}${path.sep}${deleteQuotes(directoryToMoveFile)}`
-        )
-        const readOldDirectory = await readdir(`${process.cwd()}`)
-        const readNewDirectory = await readdir(pathToNewDirectory)
+    const [fileToMove, ...directoryToMoveFile] = dataToMove
+    const pathToMoveFile = generatePath(deleteQuotes(fileToMove))
+    const pathToNewDirectory = generatePath(deleteQuotes(directoryToMoveFile))
+    const fileName = path.parse(pathToMoveFile).base
+    const existSourceFile = await accessPath(pathToMoveFile)
+    const existDestinationFile = await accessPath(pathToNewDirectory)
 
-        if (
-            readOldDirectory.includes(deleteQuotes(fileToMove)) &&
-            readNewDirectory
-        ) {
-            const pathToNewFile = `${pathToNewDirectory}${
-                path.sep
-            }${deleteQuotes(fileToMove)}`
-            const readTextFile = createReadStream(
-                path.resolve(deleteQuotes(fileToMove))
-            )
-            await writeFile(pathToNewFile, "")
-            const writeTextFile = createWriteStream(pathToNewFile)
-            readTextFile.pipe(writeTextFile)
-            remove(`${process.cwd()}${path.sep}${deleteQuotes(fileToMove)}`)
-        } else {
-            console.log("Operation failed!")
-        }
-    } catch {
+    if (existSourceFile && existDestinationFile) {
+        const pathToNewFile = `${pathToNewDirectory}${path.sep}${fileName}`
+        const readTextFile = createReadStream(pathToMoveFile)
+        const writeTextFile = createWriteStream(pathToNewFile, { flags: "wx" })
+        readTextFile.pipe(
+            writeTextFile.on("error", () => {
+                readTextFile.close()
+                console.log("Operation failed!")
+                showDirectory(process.cwd())
+            })
+        )
+        writeTextFile.on("finish", () => {
+            remove(pathToMoveFile)
+            showDirectory(process.cwd())
+        })
+    } else {
         console.log("Operation failed!")
-    } finally {
         showDirectory(process.cwd())
     }
 }
 
 export const rm = async (fileToDelete) => {
-    remove(`${process.cwd()}${path.sep}${deleteQuotes(fileToDelete)}`)
+    const pathToDeleteFile = generatePath(deleteQuotes(fileToDelete))
+    remove(pathToDeleteFile)
         .catch(() => console.log("Operation failed!"))
         .finally(() => showDirectory(process.cwd()))
 }

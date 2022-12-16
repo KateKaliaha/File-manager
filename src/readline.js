@@ -6,11 +6,12 @@ import { handlerOs } from "./operationSystem.js"
 import { hash } from "./hash.js"
 import { compress, decompress } from "./archive.js"
 import os from "node:os"
+import { showDirectory, validateInput } from "./helpers.js"
 
 export const readLine = (name) => {
     const rl = readline.createInterface({ input, output })
     rl.on("line", async (input) => {
-        const consoleInput = input.trim().split(" ")
+        const consoleInput = validateInput(input)
 
         switch (consoleInput[0]) {
             case ".exit": {
@@ -117,6 +118,7 @@ export const readLine = (name) => {
 
             default: {
                 console.log("Invalid input!")
+                showDirectory(process.cwd())
             }
         }
     })
