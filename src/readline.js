@@ -1,12 +1,12 @@
 import { stdin as input, stdout as output } from "node:process"
 import * as readline from "node:readline/promises"
-import { up, cd, ls } from "./navigation.js"
-import { cat, cp, rm, rn, add, mv } from "./basicOperations.js"
+import { up, cd, ls } from "./navigation/index.js"
+import { cat, cp, rm, rn, add, mv } from "./basicOperations/index.js"
 import { handlerOs } from "./operationSystem.js"
 import { hash } from "./hash.js"
-import { compress, decompress } from "./archive.js"
+import { compress, decompress } from "./archive/index.js"
 import os from "node:os"
-import { showDirectory, validateInput } from "./helpers.js"
+import { showDirectory, validateInput } from "./helpers/index.js"
 
 export const readLine = (name) => {
     const rl = readline.createInterface({ input, output })

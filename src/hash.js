@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises"
 import { createHash } from "node:crypto"
-import { deleteQuotes, generatePath } from "./helpers.js"
+import { deleteQuotes, generatePath } from "./helpers/index.js"
 
 export const hash = async (fileToHash) => {
     const pathToFile = generatePath(deleteQuotes(fileToHash))

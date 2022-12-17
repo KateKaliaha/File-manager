@@ -1,5 +1,5 @@
 import os from "node:os"
-import { showDirectory } from "./src/helpers.js"
+import { showDirectory } from "./src/helpers/index.js"
 import { readLine } from "./src/readline.js"
 
 const userData = process.argv.slice(2)
