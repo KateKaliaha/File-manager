@@ -89,7 +89,7 @@ export const readLine = (name) => {
 
             case "os": {
                 if (consoleInput.length === 1) {
-                    handlerOs(consoleInput)
+                    handlerOs(consoleInput[0])
                 } else {
                     console.log("Invalid input!")
                 }

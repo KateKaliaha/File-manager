@@ -1,6 +1,7 @@
 import os from "node:os"
 
 export const handlerOs = async (command) => {
+    console.log(command)
     switch (command) {
         case "--EOL": {
             const eol = JSON.stringify(os.EOL)
