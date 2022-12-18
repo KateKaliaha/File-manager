@@ -6,7 +6,12 @@ export const generatePath = (data) => {
     }
     let absolutePath = ""
     if (path.isAbsolute(data + path.sep)) {
-        absolutePath = data
+        const parsePathExt = path.parse(data).ext
+        if (!parsePathExt) {
+            absolutePath = data + path.sep
+        } else {
+            absolutePath = data
+        }
     } else {
         absolutePath = path.resolve(`${process.cwd()}${path.sep}${data}`)
     }
