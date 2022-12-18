@@ -11,9 +11,10 @@ import { showDirectory, validateInput } from "./helpers/index.js"
 export const readLine = (name) => {
     const rl = readline.createInterface({ input, output })
     rl.on("line", async (input) => {
+        const command = input.split(" ")[0]
         const consoleInput = validateInput(input)
 
-        switch (consoleInput[0]) {
+        switch (command) {
             case ".exit": {
                 rl.close()
                 break
@@ -32,13 +33,13 @@ export const readLine = (name) => {
             }
 
             case "cat": {
-                cat(consoleInput.slice(1).join(" "))
+                cat(consoleInput)
                 break
             }
 
             case "add": {
-                if (consoleInput.length === 2) {
-                    await add(consoleInput.slice(1).join(" "))
+                if (consoleInput.length === 1) {
+                    await add(consoleInput[0])
                 } else {
                     console.log("Invalid input!")
                     await showDirectory(process.cwd())
@@ -47,18 +48,18 @@ export const readLine = (name) => {
             }
 
             case "cd": {
-                if (consoleInput.length === 1) {
+                if (consoleInput.length === 0) {
                     console.log("Invalid input!")
                     showDirectory(process.cwd())
                     return
                 }
-                cd(consoleInput.slice(1).join(" "))
+                cd(consoleInput)
                 break
             }
 
             case "rn": {
-                if (consoleInput.length === 3) {
-                    await rn(consoleInput.slice(1))
+                if (consoleInput.length === 2) {
+                    await rn(consoleInput)
                 } else {
                     console.log("Invalid input!")
                     showDirectory(process.cwd())
@@ -67,18 +68,18 @@ export const readLine = (name) => {
             }
 
             case "cp": {
-                cp(consoleInput.slice(1))
+                cp(consoleInput)
                 break
             }
 
             case "mv": {
-                mv(consoleInput.slice(1))
+                mv(consoleInput)
                 break
             }
 
             case "rm": {
-                if (consoleInput.length === 2) {
-                    rm(consoleInput.slice(1).join(" "))
+                if (consoleInput.length === 1) {
+                    rm(consoleInput)
                 } else {
                     console.log("Invalid input!")
                     showDirectory(process.cwd())
@@ -87,8 +88,8 @@ export const readLine = (name) => {
             }
 
             case "os": {
-                if (consoleInput.length === 2) {
-                    handlerOs(consoleInput.slice(1).join(" "))
+                if (consoleInput.length === 1) {
+                    handlerOs(consoleInput)
                 } else {
                     console.log("Invalid input!")
                 }
@@ -97,8 +98,8 @@ export const readLine = (name) => {
             }
 
             case "hash": {
-                if (consoleInput.length === 2) {
-                    await hash(consoleInput.slice(1).join(" "))
+                if (consoleInput.length === 1) {
+                    await hash(consoleInput)
                 } else {
                     console.log("Invalid input!")
                 }
@@ -107,12 +108,12 @@ export const readLine = (name) => {
             }
 
             case "compress": {
-                compress(consoleInput.slice(1))
+                compress(consoleInput)
                 break
             }
 
             case "decompress": {
-                decompress(consoleInput.slice(1))
+                decompress(consoleInput)
                 break
             }
 

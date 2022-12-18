@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises"
 
 export const ls = async (input) => {
-    if (input.length > 1) {
+    if (input.length > 0) {
         console.log("Invalid input!")
         return
     }

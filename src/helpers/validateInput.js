@@ -1,28 +1,29 @@
-export const validateInput = (input) => {
-    const arrWithValidateData = []
-    let inputData = ""
+export const validateInput = (str) => {
+    let validateData = ""
+    const pairsQuotes =
+        str.split("").filter((sign) => sign === "'").length % 2 === 0
 
-    for (let i = 0; i < input.length; i++) {
-        if (input[i] === " ") {
-            arrWithValidateData.push(inputData)
-            inputData = ""
-        } else if (input[i] === "'") {
-            arrWithValidateData.push(inputData)
-            inputData = ""
-            i++
+    if (pairsQuotes) {
+        if (/'/g.test(str)) {
+            validateData = str
+                .split(" ")
+                .slice(1)
+                .join(" ")
+                .split("'")
+                .filter((item) => item !== " " && item !== "")
+                .map((item) => item.trim())
 
-            while (input[i] !== "'") {
-                inputData += input[i]
-                i++
-            }
-
-            arrWithValidateData.push(inputData)
-            inputData = ""
-        } else {
-            inputData += input[i]
+            return validateData
         }
     }
-    arrWithValidateData.push(inputData)
 
-    return arrWithValidateData.filter((item) => item !== "")
+    if (str === "") {
+        validateData = []
+
+        return validateData
+    }
+
+    validateData = str.trim().split(" ").slice(1)
+
+    return validateData
 }

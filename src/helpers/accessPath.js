@@ -1,8 +1,8 @@
 import { access } from "node:fs/promises"
 
-export const accessPath = async (path) => {
+export const accessPath = async (pathToCheck) => {
     try {
-        await access(path)
+        await access(pathToCheck)
         return true
     } catch {
         return false

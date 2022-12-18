@@ -1,7 +1,7 @@
 import path from "path"
 
 export const up = (input) => {
-    if (input.length > 1) {
+    if (input.length > 0) {
         console.log("Invalid input!")
         return
     }
