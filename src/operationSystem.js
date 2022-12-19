@@ -10,7 +10,11 @@ export const handlerOs = async (command) => {
         case "--cpus": {
             const cpus = os.cpus()
             const infoCpus = cpus.map(
-                (item) => (item = { model: item.model, speed: item.speed })
+                (item) =>
+                    (item = {
+                        model: item.model,
+                        speed: item.speed / 1000 + "GHz",
+                    })
             )
             console.table(infoCpus)
             break
